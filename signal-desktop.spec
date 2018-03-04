@@ -8,7 +8,13 @@ URL:		https://github.com/WhisperSystems/Signal-Desktop#readme
 Source0:	https://github.com/signalapp/Signal-Desktop/archive/v%{version}.tar.gz
 
 #ExclusiveArch:	x86_64
-BuildRequires:	binutils, yarn, git, python2, gcc, gcc-c++, node-gyp, npm
+BuildRequires:binutils
+BuildRequires: yarn
+BuildRequires: git
+BuildRequires: python2
+BuildRequires: gcc, gcc-c++
+BuildRequires: node-gyp, npm
+BuildRequires: desktop-file-utils
 
 #Depends: gconf2, gconf-service, libnotify4, libappindicator1, libxtst6, libnss3, libasound2, libxss1
 Requires:   GConf2, libnotify, libappindicator, libXtst, nss
@@ -73,6 +79,7 @@ EOF
 /bin/touch --no-create %{_datadir}/icons/hicolor &>/dev/null || :
 /usr/bin/update-desktop-database &> /dev/null || :
 /bin/touch --no-create %{_datadir}/mime/packages &>/dev/null || :
+/sbin/ldconfig
 
 %postun
 if [ $1 -eq 0 ] ; then
@@ -80,15 +87,11 @@ if [ $1 -eq 0 ] ; then
     /usr/bin/gtk-update-icon-cache %{_datadir}/icons/hicolor &>/dev/null || :
 fi
 /usr/bin/update-desktop-database &> /dev/null || :
+/sbin/ldconfig
 
 %posttrans
 /usr/bin/gtk-update-icon-cache %{_datadir}/icons/hicolor &>/dev/null || :
 
-
-
-# both lines from original packager for some reason
-%post -p /sbin/ldconfig
-%postun -p /sbin/ldconfig
 
 %files
 %defattr(-,root,root)
@@ -98,6 +101,9 @@ fi
 
 
 %changelog
+* Sun Mar 4 2018 Bernhard Schuster <bernhard@ahoi.io> 1.5.2-2
+  - update icons and desktop database
+
 * Fri Mar 2 2018 Guilherme Cardoso <gjc@ua.pt> 1.5.2-1
   - Version bump
 
