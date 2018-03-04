@@ -1,9 +1,9 @@
 Name:		signal-desktop
 Version:	1.5.2
-Release:	1%{?dist}
+Release:	2%{?dist}
 Summary:	Private messaging from your desktop
 License:	GPLv3
-URL:		https://github.com/WhisperSystems/Signal-Desktop#readme
+URL:		https://github.com/signalapp/Signal-Desktop#readme
 
 Source0:	https://github.com/signalapp/Signal-Desktop/archive/v%{version}.tar.gz
 
@@ -61,7 +61,7 @@ ln -s %{_libdir}/%{name}/signal-desktop %{buildroot}%{_bindir}/signal-desktop
 # create desktop entry
 mkdir -p %{_builddir}%{_datadir}/applications/
 
-cat > %{_builddir}%{_datadir}/applications/%{name}.desktop <<'EOF'
+cat > %{name}.desktop <<'EOF'
 [Desktop Entry]
 Type=Application
 Name=Signal
@@ -73,12 +73,11 @@ Categories=Network;Messenger;
 StartupNotify=true
 EOF
 
-# echo %{_datarootdir}
+install -Dm644 %{name}.desktop %{buildroot}%{_datadir}/applications/%{name}.desktop
 
 %post
 /bin/touch --no-create %{_datadir}/icons/hicolor &>/dev/null || :
 /usr/bin/update-desktop-database &> /dev/null || :
-/bin/touch --no-create %{_datadir}/mime/packages &>/dev/null || :
 /sbin/ldconfig
 
 %postun
@@ -95,13 +94,14 @@ fi
 
 %files
 %defattr(-,root,root)
-%{_datadir}/*
+%{_datadir}/applications/%{name}.desktop
+%{_datadir}/applications/signal-desktop.desktop
+%{_datadir}/icons/hicolor/*/apps/%{name}.png
 %{_bindir}/signal-desktop
-%{_libdir}/*
-
+%{_libdir}/%{name}/*
 
 %changelog
-* Sun Mar 4 2018 Bernhard Schuster <bernhard@ahoi.io> 1.5.2-2
+* Sun Mar 4 2018 Bernhard Schuster <bernhard@ahoi.io> 1.5.2-3
   - update icons and desktop database
 
 * Fri Mar 2 2018 Guilherme Cardoso <gjc@ua.pt> 1.5.2-1

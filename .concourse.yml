@@ -50,6 +50,7 @@ resources:
 jobs:
   - name: build-pkg-rpm
     public: true
+    build_logs_to_retain: 3
     plan:
     - get: release
       params: { include_source_tarball: true }
