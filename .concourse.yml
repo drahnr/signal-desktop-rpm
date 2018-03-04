@@ -12,17 +12,24 @@ resources:
     username: {{quay-username}}
     password: {{quay-password}}
 
-- name: git-tag-resource
-  type: git
+- name: github-release-resource
+  type: github-release
   source:
-    branch: master
-    uri: https://github.com/WhisperSystems/Signal-Desktop
+    owner: signalapp
+    repository: Signal-Desktop 
 
-- name: git-ci
+- name: git-ci-resource
   type: git
   source:
     branch: master
     uri: https://github.com/drahnr/signal-desktop-rpm
+
+- name: git-signal-resource
+  type: git
+  source:
+    branch: master
+    uri: https://github.com/signalapp/Signal-Desktop
+
 
 - name: copr-resource
   type: copr
@@ -42,37 +49,87 @@ resources:
 
 jobs:
   - name: build-pkg-rpm
-    build_logs_to_retain: 5
     public: true
     plan:
-    - aggregate:
-      - get: source
-        resource: git-tag-resource
-        trigger: true
-      - get: container-fedora
-        trigger: true
-      - get: ci
-        resource: git-ci
-        trigger: true
+    - get: release
+      params: { include_source_tarball: true }
+      trigger: true
+      resource: github-release-resource
+
+    - get: container-fedora
+      trigger: true 
+    - get: spec
+      resource: git-ci-resource
+      trigger: true
+    - get: source
+      resource: git-signal-resource
     - task: create-rpm
       timeout: 30m
       image: container-fedora
       config:
         platform: linux
         inputs:
-        - name: ci
+        - name: release
+        - name: spec
         - name: source
         outputs:
         - name: srpm
         - name: rpm
         run:
-          path: ci/.concourse/buildrpm.sh
+          path: bash
           args:
-          - signal-desktop
-          - ci
-          - source
-          - srpm
-          - rpm
+          - -exc
+          - |
+            REFERENCE_DIR="$(pwd)"
+
+            VERSION=$(cat release/version)
+            COMMIT_TAG=$(cat release/tag)
+            NAME="Signal-Desktop"
+            NAME_LOWERCASE="$(echo ${NAME} | tr '[:upper:]' '[:lower:]' )"
+                        
+            SPEC_SOURCE_DIR="${REFERENCE_DIR}/spec"
+            GIT_REPO_DIR="${REFERENCE_DIR}/source"
+            OUTPUT_RPM_DIR="${REFERENCE_DIR}/rpm"
+            OUTPUT_SRPM_DIR="${REFERENCE_DIR}/srpm"
+            
+            pwd 2>&1
+            RPMBUILD_DIR="${REFERENCE_DIR}/rpmbuild"
+            
+            mkdir -p "${RPMBUILD_DIR}/"{SOURCES,BUILD,RPMS,SRPMS,SPECS}
+            #content is not the way github would format it
+            #cp -v release/source.tar.gz "${RPMBUILD_DIR}/SOURCES/v${VERSION}.tar.gz"            
+            
+            cp -v "${SPEC_SOURCE_DIR}/${NAME_LOWERCASE}.spec" "${RPMBUILD_DIR}/SPECS"
+            
+            cd "${GIT_REPO_DIR}"
+            COMMIT_SHA=$(git rev-parse ${COMMIT_TAG})
+            git checkout ${COMMIT_TAG}
+            echo "Using ${COMMIT_TAG} / ${COMMIT_SHA}"
+            git archive --format=tar --prefix="${NAME}-${VERSION}/" HEAD | gzip > "v${VERSION}.tar.gz"
+            cd -
+
+            cp -v "${GIT_REPO_DIR}/v${VERSION}.tar.gz" "${RPMBUILD_DIR}/SOURCES"
+                                       
+            cd "${RPMBUILD_DIR}"
+
+            curl --silent --location https://dl.yarnpkg.com/rpm/yarn.repo | tee /etc/yum.repos.d/yarn.repo
+
+            dnf install -y 'dnf-command(builddep)'
+            dnf builddep -y "SPECS/${NAME_LOWERCASE}.spec"
+            
+            rpmbuild \
+            --define "_topdir ${RPMBUILD_DIR}" \
+            --define "_builddir %{_topdir}/BUILD" \
+            --define "_rpmdir %{_topdir}/RPMS" \
+            --define "_srcrpmdir %{_topdir}/SRPMS" \
+            --define "_specdir %{_topdir}/SPECS" \
+            --define "_sourcedir  %{_topdir}/SOURCES" \
+            -ba "SPECS/${NAME_LOWERCASE}.spec" || exit 1
+            
+            mkdir -p "${OUTPUT_RPM_DIR}" "${OUTPUT_SRPM_DIR}"
+            rm -vf ${RPMBUILD_DIR}/RPMS/x86_64/${NAME_LOWERCASE}-*debug*.rpm
+            cp -vf ${RPMBUILD_DIR}/RPMS/x86_64/${NAME_LOWERCASE}-*.rpm "${OUTPUT_RPM_DIR}"
+            cp -vf ${RPMBUILD_DIR}/SRPMS/${NAME_LOWERCASE}-*.src.rpm "${OUTPUT_SRPM_DIR}"
 
     - put: rpm-release
       params:
