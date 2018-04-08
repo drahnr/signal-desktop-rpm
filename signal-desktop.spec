@@ -29,7 +29,7 @@ tar xfz %{S:0}
 
 %build
 cd Signal-Desktop-%{version}
-yarn install
+yarn install --ignore-engines --no-lockfile
 yarn pack-prod --force
 
 %install
