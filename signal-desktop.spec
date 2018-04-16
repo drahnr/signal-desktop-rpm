@@ -1,6 +1,6 @@
 Name:		signal-desktop
 Version:	1.7.1
-Release:	2%{?dist}
+Release:	3%{?dist}
 Summary:	Private messaging from your desktop
 License:	GPLv3
 URL:		https://github.com/signalapp/Signal-Desktop#readme
@@ -29,7 +29,7 @@ tar xfz %{S:0}
 
 %build
 cd Signal-Desktop-%{version}
-yarn install --ignore-engines
+yarn install
 yarn pack-prod --force
 
 %install
