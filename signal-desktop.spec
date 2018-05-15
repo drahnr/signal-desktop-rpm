@@ -1,6 +1,6 @@
 Name:		signal-desktop
 Version:	1.11.0
-Release:	1%{?dist}
+Release:	2%{?dist}
 Summary:	Private messaging from your desktop
 License:	GPLv3
 URL:		https://github.com/signalapp/Signal-Desktop#readme
@@ -34,7 +34,7 @@ PATH=node_modules/.bin:$PATH yarn install
 
 yarn install
 yarn icon-gen
-yarn build
+yarn build-release --linux dir
 
 %install
 
@@ -47,7 +47,7 @@ yarn build
 
 
 install -dm755 %{buildroot}%{_libdir}/%{name}
-cp -r %{_builddir}/Signal-Desktop-%{version}/dist/%{PACKDIR}/* %{buildroot}%{_libdir}/%{name}
+cp -r %{_builddir}/Signal-Desktop-%{version}/release/%{PACKDIR}/* %{buildroot}%{_libdir}/%{name}
 
 install -dm755 "%{buildroot}%{_datadir}/icons/hicolor"
 for i in 16 24 32 48 64 128 256 512; do
@@ -55,8 +55,8 @@ for i in 16 24 32 48 64 128 256 512; do
 done
 
 # right permissions for shared objects
-install -m 755 %{_builddir}/Signal-Desktop-%{version}/dist/%{PACKDIR}/libffmpeg.so %{buildroot}%{_libdir}/%{name}
-install -m 755 %{_builddir}/Signal-Desktop-%{version}/dist/%{PACKDIR}/libnode.so %{buildroot}%{_libdir}/%{name}
+install -m 755 %{_builddir}/Signal-Desktop-%{version}/release/%{PACKDIR}/libffmpeg.so %{buildroot}%{_libdir}/%{name}
+install -m 755 %{_builddir}/Signal-Desktop-%{version}/release/%{PACKDIR}/libnode.so %{buildroot}%{_libdir}/%{name}
 
 # create symlink
 install -dm755 %{buildroot}%{_bindir}
@@ -105,6 +105,9 @@ fi
 %{_libdir}/%{name}/*
 
 %changelog
+* Tue Apr 15 2018 Bernhard Schuster <bernhard@ahoi.io> 1.11.0-1
+  - bump to upstream version 1.11.0 and required spec file adjustments
+
 * Sat Apr 14 2018 Bernhard Schuster <bernhard@ahoi.io> 1.7.1-1
   - bump to upstream version 1.7.1
 
