@@ -1,14 +1,14 @@
 Name:		signal-desktop
-Version:	1.7.1
-Release:	3%{?dist}
+Version:	1.11.0
+Release:	1%{?dist}
 Summary:	Private messaging from your desktop
 License:	GPLv3
 URL:		https://github.com/signalapp/Signal-Desktop#readme
 
-Source0:	https://github.com/signalapp/Signal-Desktop/archive/v%{version}.tar.gz
+Source0: https://github.com/signalapp/Signal-Desktop/archive/v%{version}.tar.gz
 
 #ExclusiveArch:	x86_64
-BuildRequires:binutils
+BuildRequires: binutils
 BuildRequires: yarn
 BuildRequires: git
 BuildRequires: python2
@@ -29,8 +29,11 @@ tar xfz %{S:0}
 
 %build
 cd Signal-Desktop-%{version}
+sed -i -- "s/    \"node\": .*/    \"node\": \"$(node -v | cut -b 2-)\"/g" package.json
+PATH=node_modules/.bin:$PATH yarn install
+
 yarn install
-yarn pack-prod --force
+yarn build-release
 
 %install
 
@@ -43,7 +46,7 @@ yarn pack-prod --force
 
 
 install -dm755 %{buildroot}%{_libdir}/%{name}
-cp -r %{_builddir}/Signal-Desktop-%{version}/dist/%{PACKDIR}/* %{buildroot}%{_libdir}/%{name}
+cp -r %{_builddir}/Signal-Desktop-%{version}/release/%{PACKDIR}/* %{buildroot}%{_libdir}/%{name}
 
 install -dm755 "%{buildroot}%{_datadir}/icons/hicolor"
 for i in 16 24 32 48 64 128 256 512; do
@@ -51,8 +54,8 @@ for i in 16 24 32 48 64 128 256 512; do
 done
 
 # right permissions for shared objects
-install -m 755 %{_builddir}/Signal-Desktop-%{version}/dist/%{PACKDIR}/libffmpeg.so %{buildroot}%{_libdir}/%{name}
-install -m 755 %{_builddir}/Signal-Desktop-%{version}/dist/%{PACKDIR}/libnode.so %{buildroot}%{_libdir}/%{name}
+install -m 755 %{_builddir}/Signal-Desktop-%{version}/release/%{PACKDIR}/libffmpeg.so %{buildroot}%{_libdir}/%{name}
+install -m 755 %{_builddir}/Signal-Desktop-%{version}/release/%{PACKDIR}/libnode.so %{buildroot}%{_libdir}/%{name}
 
 # create symlink
 install -dm755 %{buildroot}%{_bindir}
