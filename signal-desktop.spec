@@ -47,7 +47,7 @@ yarn build
 
 
 install -dm755 %{buildroot}%{_libdir}/%{name}
-cp -r %{_builddir}/Signal-Desktop-%{version}/release/%{PACKDIR}/* %{buildroot}%{_libdir}/%{name}
+cp -r %{_builddir}/Signal-Desktop-%{version}/dist/%{PACKDIR}/* %{buildroot}%{_libdir}/%{name}
 
 install -dm755 "%{buildroot}%{_datadir}/icons/hicolor"
 for i in 16 24 32 48 64 128 256 512; do
@@ -55,8 +55,8 @@ for i in 16 24 32 48 64 128 256 512; do
 done
 
 # right permissions for shared objects
-install -m 755 %{_builddir}/Signal-Desktop-%{version}/release/%{PACKDIR}/libffmpeg.so %{buildroot}%{_libdir}/%{name}
-install -m 755 %{_builddir}/Signal-Desktop-%{version}/release/%{PACKDIR}/libnode.so %{buildroot}%{_libdir}/%{name}
+install -m 755 %{_builddir}/Signal-Desktop-%{version}/dist/%{PACKDIR}/libffmpeg.so %{buildroot}%{_libdir}/%{name}
+install -m 755 %{_builddir}/Signal-Desktop-%{version}/dist/%{PACKDIR}/libnode.so %{buildroot}%{_libdir}/%{name}
 
 # create symlink
 install -dm755 %{buildroot}%{_bindir}
