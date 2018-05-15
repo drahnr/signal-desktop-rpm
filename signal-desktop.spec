@@ -33,7 +33,8 @@ sed -i -- "s/    \"node\": .*/    \"node\": \"$(node -v | cut -b 2-)\"/g" packag
 PATH=node_modules/.bin:$PATH yarn install
 
 yarn install
-yarn build-release
+yarn icon-gen
+yarn build
 
 %install
 
