@@ -1,6 +1,6 @@
 Name:		signal-desktop
 Version:	1.11.0
-Release:	2%{?dist}
+Release:	3%{?dist}
 Summary:	Private messaging from your desktop
 License:	GPLv3
 URL:		https://github.com/signalapp/Signal-Desktop#readme
@@ -32,8 +32,12 @@ cd Signal-Desktop-%{version}
 sed -i -- "s/    \"node\": .*/    \"node\": \"$(node -v | cut -b 2-)\"/g" package.json
 PATH=node_modules/.bin:$PATH yarn install
 
-yarn install
+yarn install --frozen-lockfile
 yarn icon-gen
+yarn generate
+yarn test-node
+yarn nsp check
+yarn prepare-beta-build
 yarn build-release --linux dir
 
 %install
@@ -99,7 +103,6 @@ fi
 %files
 %defattr(-,root,root)
 %{_datadir}/applications/%{name}.desktop
-%{_datadir}/applications/signal-desktop.desktop
 %{_datadir}/icons/hicolor/*/apps/%{name}.png
 %{_bindir}/signal-desktop
 %{_libdir}/%{name}/*
