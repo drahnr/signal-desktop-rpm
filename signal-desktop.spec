@@ -33,10 +33,7 @@ sed -i -- "s/    \"node\": .*/    \"node\": \"$(node -v | cut -b 2-)\"/g" packag
 PATH=node_modules/.bin:$PATH yarn install
 
 yarn install --frozen-lockfile
-yarn icon-gen
-yarn generate
-yarn test-node
-yarn nsp check
+yarn generate --force
 yarn prepare-beta-build
 yarn build-release --linux dir
 
@@ -108,7 +105,7 @@ fi
 %{_libdir}/%{name}/*
 
 %changelog
-* Tue Apr 15 2018 Bernhard Schuster <bernhard@ahoi.io> 1.11.0-1
+* Tue May 15 2018 Bernhard Schuster <bernhard@ahoi.io> 1.11.0-1
   - bump to upstream version 1.11.0 and required spec file adjustments
 
 * Sat Apr 14 2018 Bernhard Schuster <bernhard@ahoi.io> 1.7.1-1
