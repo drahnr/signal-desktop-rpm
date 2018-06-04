@@ -1,6 +1,6 @@
 Name:		signal-desktop
-Version:	1.11.0
-Release:	4%{?dist}
+Version:	1.12.0
+Release:	1%{?dist}
 Summary:	Private messaging from your desktop
 License:	GPLv3
 URL:		https://github.com/signalapp/Signal-Desktop#readme
@@ -105,6 +105,9 @@ fi
 %{_libdir}/%{name}/*
 
 %changelog
+* Mon Jun 4 2018 Bernhard Schuster <bernhard@ahoi.io> 1.12.0-1
+  - bump to upstream version 1.12.0
+
 * Tue May 15 2018 Bernhard Schuster <bernhard@ahoi.io> 1.11.0-1
   - bump to upstream version 1.11.0 and required spec file adjustments
 
