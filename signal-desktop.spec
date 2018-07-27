@@ -15,6 +15,7 @@ BuildRequires: python2
 BuildRequires: gcc, gcc-c++
 BuildRequires: node-gyp, npm
 BuildRequires: desktop-file-utils
+BuildRequires: make
 
 #Depends: gconf2, gconf-service, libnotify4, libappindicator1, libxtst6, libnss3, libasound2, libxss1
 Requires:   GConf2, libnotify, libappindicator, libXtst, nss
