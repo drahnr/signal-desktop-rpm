@@ -1,5 +1,5 @@
 Name:		signal-desktop
-Version:	1.15.5
+Version:	1.16.0
 Release:	1%{?dist}
 Summary:	Private messaging from your desktop
 License:	GPLv3
@@ -106,6 +106,9 @@ fi
 %{_libdir}/%{name}/*
 
 %changelog
+* Thu Sep 8 2018 Bernhard Schuster <bernhard@ahoi.io> 1.16.0-1
+  - bump to upstream version 1.16.0
+
 * Thu Aug 16 2018 Bernhard Schuster <bernhard@ahoi.io> 1.15.5-1
   - bump to upstream version 1.15.5
 
