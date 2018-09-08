@@ -1,5 +1,5 @@
 Name:		signal-desktop
-Version:	1.16.0
+Version:	1.17.2
 Release:	1%{?dist}
 Summary:	Private messaging from your desktop
 License:	GPLv3
@@ -16,9 +16,11 @@ BuildRequires: gcc, gcc-c++
 BuildRequires: node-gyp, npm
 BuildRequires: desktop-file-utils
 BuildRequires: make
+BuildRequires: compat-openssl10-devel
 
 #Depends: gconf2, gconf-service, libnotify4, libappindicator1, libxtst6, libnss3, libasound2, libxss1
 Requires:   GConf2, libnotify, libappindicator, libXtst, nss
+Requires: compat-openssl10
 
 %description
 Private messaging from your desktop
@@ -30,13 +32,42 @@ tar xfz %{S:0}
 
 %build
 cd Signal-Desktop-%{version}
-sed -i -- "s/    \"node\": .*/    \"node\": \"$(node -v | cut -b 2-)\"/g" package.json
+# Fix segfault (without binary openssl)
+# sed -i 's|"https://github.com/scottnonnenberg-signal/node-sqlcipher.git#ed4f4d179ac010c6347b291cbd4c2ebe5c773741"|"3.2.1"|' package.json
+
+# Fix nodejs version
+export LOCAL_NODE_VERSION="$(node -v | cut -b 2-)"
+sed -i -- "s/    \"node\": .*/    \"node\": \"${LOCAL_NODE_VERSION}\"/g" package.json
+unset LOCAL_NODE_VERSION
 PATH=node_modules/.bin:$PATH yarn install
 
-yarn install --frozen-lockfile
-yarn generate --force
-yarn prepare-beta-build
-yarn build-release --linux dir
+#yarn install --frozen-lockfile
+#yarn generate --force
+#yarn prepare-beta-build
+#yarn build-release --linux dir
+
+#yarn add --dev electron@~2.0.3  # electron-rebuild
+
+# patch @journeyapps/sqlcipher to nuke binaries
+# try and use a local copy of sqlcipher based on the original one
+yarn add --force @journeyapps/sqlcipher
+d=.tmp-ja-sqlc
+
+rm -rf "$d"
+mkdir "$d"
+cp -pR node_modules/@journeyapps/sqlcipher "$d"
+jq \
+	'del(.bundledDependencies)|. * {"scripts":{"install":"node-pre-gyp install --build-from-source"}}' \
+	$d/sqlcipher/package.json  >.$$ \
+    && mv .$$ $d/sqlcipher/package.json
+# purge cache just in case (we didn't change version)
+rm -rf $(yarn cache dir)/npm-@journeyapps/sqlcipher-*
+yarn add --force file://$(realpath $d/sqlcipher)
+
+# build
+yarn generate
+
+yarn --verbose build-release --linux dir
 
 %install
 
@@ -106,7 +137,10 @@ fi
 %{_libdir}/%{name}/*
 
 %changelog
-* Thu Sep 8 2018 Bernhard Schuster <bernhard@ahoi.io> 1.16.0-1
+* Wed Oct 31 2018 Bernhard Schuster <bernhard@ahoi.io> 1.17.2-1
+  - bump to upstream version 1.17.2
+
+* Sat Sep 8 2018 Bernhard Schuster <bernhard@ahoi.io> 1.16.0-1
   - bump to upstream version 1.16.0
 
 * Thu Aug 16 2018 Bernhard Schuster <bernhard@ahoi.io> 1.15.5-1
