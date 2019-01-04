@@ -1,5 +1,5 @@
 Name:		signal-desktop
-Version:	1.17.2
+Version:	1.19.0
 Release:	1%{?dist}
 Summary:	Private messaging from your desktop
 License:	GPLv3
@@ -8,6 +8,7 @@ URL:		https://github.com/signalapp/Signal-Desktop#readme
 Source0: https://github.com/signalapp/Signal-Desktop/archive/v%{version}.tar.gz
 
 #ExclusiveArch:	x86_64
+BuildRequires: nodejs
 BuildRequires: binutils
 BuildRequires: yarn
 BuildRequires: git
@@ -19,7 +20,7 @@ BuildRequires: make
 BuildRequires: compat-openssl10-devel
 
 #Depends: gconf2, gconf-service, libnotify4, libappindicator1, libxtst6, libnss3, libasound2, libxss1
-Requires:   GConf2, libnotify, libappindicator, libXtst, nss
+Requires: GConf2, libnotify, libappindicator, libXtst, nss
 Requires: compat-openssl10
 
 %description

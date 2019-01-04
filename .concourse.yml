@@ -9,8 +9,8 @@ resources:
   type: docker-image
   source:
     repository: quay.io/ratpoison/oregano-test-fedora
-    username: {{quay-username}}
-    password: {{quay-password}}
+    username: {{quay-ratpoison-username}}
+    password: {{quay-ratpoison-password}}
 
 - name: github-release-resource
   type: github-release
@@ -81,6 +81,8 @@ jobs:
           args:
           - -exc
           - |
+            dnf module install -y nodejs:8
+            cat /etc/os-release
             REFERENCE_DIR="$(pwd)"
 
             VERSION=$(cat release/version)
