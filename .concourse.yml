@@ -5,12 +5,10 @@ resource_types:
     repository: quay.io/ahoi/concourse-copr-resource
 
 resources:
-- name: container-fedora
-  type: docker-image
-  source:
-    repository: quay.io/ratpoison/oregano-test-fedora
-    username: {{quay-ratpoison-username}}
-    password: {{quay-ratpoison-password}}
+ - name: container-fedora
+   type: docker-image
+   source:
+     repository: quay.io/drahnr/fedora:latest
 
 - name: github-release-resource
   type: github-release
@@ -81,7 +79,6 @@ jobs:
           args:
           - -exc
           - |
-            dnf module install -y nodejs:8
             cat /etc/os-release
             REFERENCE_DIR="$(pwd)"
 
@@ -117,9 +114,17 @@ jobs:
 
             curl --silent --location https://dl.yarnpkg.com/rpm/yarn.repo | tee /etc/yum.repos.d/yarn.repo
 
+            # explicitly install modules first, so far there is no
+            # way to combined this with builddep/spectool
+            dnf module install -y nodejs:8
             dnf install -y 'dnf-command(builddep)'
             dnf builddep -y "SPECS/${NAME_LOWERCASE}.spec"
-            
+
+            # prep for signing
+            echo "%_signature gpg" > $HOME/.rpmmacros
+            echo "%_gpg_name  Bernhard Schuster" >> $HOME/.rpmmacros
+
+            # FIXME, do not run as root
             rpmbuild \
             --define "_topdir ${RPMBUILD_DIR}" \
             --define "_builddir %{_topdir}/BUILD" \
