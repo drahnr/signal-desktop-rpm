@@ -5,10 +5,14 @@ resource_types:
     repository: quay.io/ahoi/concourse-copr-resource
 
 resources:
- - name: container-fedora
-   type: docker-image
-   source:
-     repository: quay.io/drahnr/fedora:latest
+- name: container-fedora
+  type: docker-image
+  source:
+    repository: quay.io/drahnr/fedora
+    username: ((quay-ratpoison-username))
+    password: ((quay-ratpoison-password))
+    max_concurrent_downloads: 2
+    max_concurrent_uploads: 2
 
 - name: github-release-resource
   type: github-release
@@ -80,6 +84,7 @@ jobs:
           - -exc
           - |
             cat /etc/os-release
+            dnf install -y git make gcc clang cmake rpmdevtools rpmspectool gnupg
             REFERENCE_DIR="$(pwd)"
 
             VERSION=$(cat release/version)
