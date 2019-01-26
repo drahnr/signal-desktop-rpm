@@ -16,9 +16,13 @@ resources:
 
 - name: github-release-resource
   type: github-release
+  check_every: 60m
   source:
+    release: true
+    pre_release: true
     owner: signalapp
-    repository: Signal-Desktop 
+    repository: Signal-Desktop
+    access_token: ((sirmergealot-github-antiratelimit))
 
 - name: git-ci-resource
   type: git
@@ -87,7 +91,12 @@ jobs:
             dnf install -y git make gcc clang cmake rpmdevtools rpmspectool gnupg
             REFERENCE_DIR="$(pwd)"
 
-            VERSION=$(cat release/version)
+            VERSION=$(cat release/version | cut -d "-" -f "1")
+            VERSION_SUFFIX=$(cat release/version | cut -d "-" -f "2-")
+            if [ -z ${VERSION_SUFFIX+x}]; do
+              DOT_VERSION_SUFFIX=".${VERSION_SUFFIX}"
+              DASH_VERSION_SUFFIX="-${VERSION_SUFFIX}"
+            fi
             COMMIT_TAG=$(cat release/tag)
             NAME="Signal-Desktop"
             NAME_LOWERCASE="$(echo ${NAME} | tr '[:upper:]' '[:lower:]' )"
@@ -107,15 +116,14 @@ jobs:
             cp -v "${SPEC_SOURCE_DIR}/${NAME_LOWERCASE}.spec" "${RPMBUILD_DIR}/SPECS"
             
             cd "${GIT_REPO_DIR}"
-            COMMIT_SHA=$(git rev-parse ${COMMIT_TAG})
-            git checkout ${COMMIT_TAG}
-            echo "Using ${COMMIT_TAG} / ${COMMIT_SHA}"
-            git archive --format=tar --prefix="${NAME}-${VERSION}/" HEAD | gzip > "v${VERSION}.tar.gz"
+            COMMIT_SHA="$(git rev-parse ${COMMIT_TAG})"
+            git checkout "${COMMIT_TAG}"
+            echo "Using ${COMMIT_TAG} / ${COMMIT_SHA} @ ${VERSION}"
+            git archive --format=tar --prefix="${NAME}-${VERSION}/" HEAD | gzip > "${RPMBUILD_DIR}/SOURCES/v${VERSION}.tar.gz"
             cd -
-
-            cp -v "${GIT_REPO_DIR}/v${VERSION}.tar.gz" "${RPMBUILD_DIR}/SOURCES"
                                        
             cd "${RPMBUILD_DIR}"
+            ls -al SOURCES
 
             curl --silent --location https://dl.yarnpkg.com/rpm/yarn.repo | tee /etc/yum.repos.d/yarn.repo
 
@@ -137,6 +145,8 @@ jobs:
             --define "_srcrpmdir %{_topdir}/SRPMS" \
             --define "_specdir %{_topdir}/SPECS" \
             --define "_sourcedir  %{_topdir}/SOURCES" \
+            --define "dot_version_suffix ${DOT_VERSION_SUFFIX}" \
+            --define "dash_version_suffix ${DASH_VERSION_SUFFIX}" \
             -ba "SPECS/${NAME_LOWERCASE}.spec" || exit 1
             
             mkdir -p "${OUTPUT_RPM_DIR}" "${OUTPUT_SRPM_DIR}"
@@ -153,7 +163,7 @@ jobs:
       resource: copr-resource
       params:
         rpmbuild_dir: "srpm"
-        chroots: ["fedora-rawhide-x86_64", "fedora-28-x86_64", "fedora-27-x86_64", "fedora-26-x86_64"]
+        chroots: ["fedora-rawhide-x86_64", "fedora-29-x86_64"]
         enable_net: false
         max_n_bytes: 250000000
         project_id: 18368

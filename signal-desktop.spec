@@ -1,11 +1,11 @@
 Name:		signal-desktop
 Version:	1.20.0
-Release:	1%{?dist}
+Release:    0%{dot_version_suffix}%{?dist}
 Summary:	Private messaging from your desktop
 License:	GPLv3
 URL:		https://github.com/signalapp/Signal-Desktop#readme
 
-Source0: https://github.com/signalapp/Signal-Desktop/archive/v%{version}.tar.gz
+Source0: https://github.com/signalapp/Signal-Desktop/archive/v%{version}%{dash_version_suffix}.tar.gz
 
 #ExclusiveArch:	x86_64
 BuildRequires: nodejs
@@ -28,11 +28,11 @@ Private messaging from your desktop
 
 %prep
 pwd
-rm -rf Signal-Desktop-%{version}
+rm -rf Signal-Desktop-%{version}%{dash_version_suffix}
 tar xfz %{S:0}
 
 %build
-cd Signal-Desktop-%{version}
+cd Signal-Desktop-%{version}%{dash_version_suffix}
 # Fix segfault (without binary openssl)
 # sed -i 's|"https://github.com/scottnonnenberg-signal/node-sqlcipher.git#ed4f4d179ac010c6347b291cbd4c2ebe5c773741"|"3.2.1"|' package.json
 
@@ -81,16 +81,16 @@ yarn --verbose build-release --linux dir
 
 
 install -dm755 %{buildroot}%{_libdir}/%{name}
-cp -r %{_builddir}/Signal-Desktop-%{version}/release/%{PACKDIR}/* %{buildroot}%{_libdir}/%{name}
+cp -r %{_builddir}/Signal-Desktop-%{version}%{dash_version_suffix}/release/%{PACKDIR}/* %{buildroot}%{_libdir}/%{name}
 
 install -dm755 "%{buildroot}%{_datadir}/icons/hicolor"
 for i in 16 24 32 48 64 128 256 512; do
-    install -Dm644 %{_builddir}/Signal-Desktop-%{version}/build/icons/png/${i}* %{buildroot}%{_datadir}/icons/hicolor/${i}x${i}/apps/%{name}.png
+    install -Dm644 %{_builddir}/Signal-Desktop-%{version}%{dash_version_suffix}/build/icons/png/${i}* %{buildroot}%{_datadir}/icons/hicolor/${i}x${i}/apps/%{name}.png
 done
 
 # right permissions for shared objects
-install -m 755 %{_builddir}/Signal-Desktop-%{version}/release/%{PACKDIR}/libffmpeg.so %{buildroot}%{_libdir}/%{name}
-install -m 755 %{_builddir}/Signal-Desktop-%{version}/release/%{PACKDIR}/libnode.so %{buildroot}%{_libdir}/%{name}
+install -m 755 %{_builddir}/Signal-Desktop-%{version}%{dash_version_suffix}/release/%{PACKDIR}/libffmpeg.so %{buildroot}%{_libdir}/%{name}
+install -m 755 %{_builddir}/Signal-Desktop-%{version}%{dash_version_suffix}/release/%{PACKDIR}/libnode.so %{buildroot}%{_libdir}/%{name}
 
 # create symlink
 install -dm755 %{buildroot}%{_bindir}
