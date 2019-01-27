@@ -91,9 +91,15 @@ jobs:
             dnf install -y git make gcc clang cmake rpmdevtools rpmspectool gnupg
             REFERENCE_DIR="$(pwd)"
 
-            VERSION=$(cat release/version | cut -d "-" -f "1")
-            VERSION_SUFFIX=$(cat release/version | cut -d "-" -f "2-")
-            if [ -z ${VERSION_SUFFIX+x}]; do
+            VERSION_WITH_SUFFIX=$(cat release/version)
+            VERSION=$(echo -n "$VERSION_WITH_SUFFIX" | cut -d "-" -f "1")
+            VERSION_SUFFIX=$(echo -n "$VERSION_WITH_SUFFIX" | cut -s -d "-" -f "2-")
+            if [ -z ${VERSION_SUFFIX+x}]; then
+              echo "release version"
+              DOT_VERSION_SUFFIX=""
+              DASH_VERSION_SUFFIX=""
+            else
+              echo "pre-release version"
               DOT_VERSION_SUFFIX=".${VERSION_SUFFIX}"
               DASH_VERSION_SUFFIX="-${VERSION_SUFFIX}"
             fi
@@ -118,8 +124,8 @@ jobs:
             cd "${GIT_REPO_DIR}"
             COMMIT_SHA="$(git rev-parse ${COMMIT_TAG})"
             git checkout "${COMMIT_TAG}"
-            echo "Using ${COMMIT_TAG} / ${COMMIT_SHA} @ ${VERSION}"
-            git archive --format=tar --prefix="${NAME}-${VERSION}/" HEAD | gzip > "${RPMBUILD_DIR}/SOURCES/v${VERSION}.tar.gz"
+            echo "Using ${COMMIT_TAG} / ${COMMIT_SHA} @ ${VERSION_WITH_SUFFIX}"
+            git archive --format=tar --prefix="${NAME}-${VERSION_WITH_SUFFIX}/" HEAD | gzip > "${RPMBUILD_DIR}/SOURCES/v${VERSION_WITH_SUFFIX}.tar.gz"
             cd -
                                        
             cd "${RPMBUILD_DIR}"

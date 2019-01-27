@@ -18,6 +18,9 @@ BuildRequires: node-gyp, npm
 BuildRequires: desktop-file-utils
 BuildRequires: make
 BuildRequires: compat-openssl10-devel
+# date
+BuildRequires: coreutils
+BuildRequires: bc
 
 #Depends: gconf2, gconf-service, libnotify4, libappindicator1, libxtst6, libnss3, libasound2, libxss1
 Requires: GConf2, libnotify, libappindicator, libXtst, nss
@@ -65,8 +68,14 @@ jq \
 rm -rf $(yarn cache dir)/npm-@journeyapps/sqlcipher-*
 yarn add --force file://$(realpath $d/sqlcipher)
 
+# overwrite some silly timestamp
+# TODO shell math is not nice
+echo \{time: $(echo "$(date '+%s') + 90 * 24 * 60 * 60" | bc)000\}  > ./config/local-development.json
+
+# ... and make sure the timestamp task is not run by grunt, so we have to specify all the grund tasks manually
+# since default would trigger the timestamp from commit creation again
 # build
-yarn generate
+yarn generate exec:build-protobuf exec:transpile concat copy:deps sass
 
 yarn --verbose build-release --linux dir
 
