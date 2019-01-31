@@ -14,15 +14,25 @@ resources:
     max_concurrent_downloads: 2
     max_concurrent_uploads: 2
 
-- name: github-release-resource
+- name: github-upstream-release-resource
   type: github-release
   check_every: 60m
   source:
+    version: every
     release: true
     pre_release: true
     owner: signalapp
     repository: Signal-Desktop
     access_token: ((sirmergealot-github-antiratelimit))
+
+- name: github-rpm-release-resource
+  type: github-release
+  check_every: 24h
+  source:
+    release: true
+    owner: drahnr
+    repository: signal-desktop-rpm
+    access_token: ((sirmergealot-github-token))
 
 - name: git-ci-resource
   type: git
@@ -44,7 +54,7 @@ resources:
     token: {{copr-token}}
     url: {{copr-url}}
 
-- name: rpm-release
+- name: rpm-release-dump
   type: s3
   source:
     endpoint: https://minio.spearow.io
@@ -61,7 +71,7 @@ jobs:
     - get: release
       params: { include_source_tarball: true }
       trigger: true
-      resource: github-release-resource
+      resource: github-upstream-release-resource
 
     - get: container-fedora
       trigger: true 
@@ -82,6 +92,7 @@ jobs:
         outputs:
         - name: srpm
         - name: rpm
+        - name: rpmreleasemeta
         run:
           path: bash
           args:
@@ -96,8 +107,8 @@ jobs:
             VERSION_SUFFIX=$(echo -n "$VERSION_WITH_SUFFIX" | cut -s -d "-" -f "2-")
             if [ -z ${VERSION_SUFFIX+x}]; then
               echo "release version"
-              DOT_VERSION_SUFFIX=""
-              DASH_VERSION_SUFFIX=""
+              DOT_VERSION_SUFFIX='%{nil}'
+              DASH_VERSION_SUFFIX='%{nil}'
             else
               echo "pre-release version"
               DOT_VERSION_SUFFIX=".${VERSION_SUFFIX}"
@@ -111,10 +122,16 @@ jobs:
             GIT_REPO_DIR="${REFERENCE_DIR}/source"
             OUTPUT_RPM_DIR="${REFERENCE_DIR}/rpm"
             OUTPUT_SRPM_DIR="${REFERENCE_DIR}/srpm"
-            
+
             pwd 2>&1
             RPMBUILD_DIR="${REFERENCE_DIR}/rpmbuild"
-            
+
+            # copy all meta info from upstream release to rpmrelease
+            mkdir -p "${REFERENCE_DIR}/rpmreleasemeta"
+            cp -rf ${REFERENCE_DIR}/release/{version,tag,body} ${REFERENCE_DIR}/rpmreleasemeta/
+            echo "${NAME}-${VERSION_WITH_SUFFIX}" > ${REFERENCE_DIR}/rpmreleasemeta/name
+
+
             mkdir -p "${RPMBUILD_DIR}/"{SOURCES,BUILD,RPMS,SRPMS,SPECS}
             #content is not the way github would format it
             #cp -v release/source.tar.gz "${RPMBUILD_DIR}/SOURCES/v${VERSION}.tar.gz"            
@@ -160,10 +177,20 @@ jobs:
             cp -vf ${RPMBUILD_DIR}/RPMS/x86_64/${NAME_LOWERCASE}-*.rpm "${OUTPUT_RPM_DIR}"
             cp -vf ${RPMBUILD_DIR}/SRPMS/${NAME_LOWERCASE}-*.src.rpm "${OUTPUT_SRPM_DIR}"
 
-    - put: rpm-release
+    - put: rpm-release-dump
       params:
         file: rpm/signal-desktop*.rpm
         acl: public-read
+
+    - put: github-rpm-release
+      resource: github-rpm-release-resource
+      params:
+        name: rpmreleasemeta/name
+        tag: rpmreleasemeta/tag
+        body: rpmreleasemeta/body
+        globs:
+        - rpm/*.rpm
+        - srpm/*.src.rpm
 
     - put: copr
       resource: copr-resource
