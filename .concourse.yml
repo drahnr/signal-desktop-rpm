@@ -168,6 +168,7 @@ jobs:
             --define "_srcrpmdir %{_topdir}/SRPMS" \
             --define "_specdir %{_topdir}/SPECS" \
             --define "_sourcedir  %{_topdir}/SOURCES" \
+            --define "upstream_version ${VERSION}" \
             --define "dot_version_suffix ${DOT_VERSION_SUFFIX}" \
             --define "dash_version_suffix ${DASH_VERSION_SUFFIX}" \
             -ba "SPECS/${NAME_LOWERCASE}.spec" || exit 1
