@@ -80,6 +80,7 @@ jobs:
       trigger: true
     - get: source
       resource: git-signal-resource
+      trigger: true
     - task: create-rpm
       timeout: 30m
       image: container-fedora
@@ -105,12 +106,12 @@ jobs:
             VERSION_WITH_SUFFIX=$(cat release/version)
             VERSION=$(echo -n "$VERSION_WITH_SUFFIX" | cut -d "-" -f "1")
             VERSION_SUFFIX=$(echo -n "$VERSION_WITH_SUFFIX" | cut -s -d "-" -f "2-")
-            if [ -z ${VERSION_SUFFIX+x}]; then
-              echo "release version"
+            if [ -z "${VERSION_SUFFIX}" ]; then
+              echo "release version VERSION_SUFFIX=\"${VERSION_SUFFIX}\""
               DOT_VERSION_SUFFIX='%{nil}'
               DASH_VERSION_SUFFIX='%{nil}'
             else
-              echo "pre-release version"
+              echo "pre-release version VERSION_SUFFIX=\"${VERSION_SUFFIX}\""
               DOT_VERSION_SUFFIX=".${VERSION_SUFFIX}"
               DASH_VERSION_SUFFIX="-${VERSION_SUFFIX}"
             fi
@@ -128,8 +129,8 @@ jobs:
 
             # copy all meta info from upstream release to rpmrelease
             mkdir -p "${REFERENCE_DIR}/rpmreleasemeta"
-            cp -rf ${REFERENCE_DIR}/release/{version,tag,body} ${REFERENCE_DIR}/rpmreleasemeta/
-            echo "${NAME}-${VERSION_WITH_SUFFIX}" > ${REFERENCE_DIR}/rpmreleasemeta/name
+            cp -rf "${REFERENCE_DIR}/release/"{version,tag,body} "${REFERENCE_DIR}/rpmreleasemeta/"
+            echo "${NAME}-${VERSION_WITH_SUFFIX}" > "${REFERENCE_DIR}/rpmreleasemeta/name"
 
 
             mkdir -p "${RPMBUILD_DIR}/"{SOURCES,BUILD,RPMS,SRPMS,SPECS}
@@ -139,9 +140,11 @@ jobs:
             cp -v "${SPEC_SOURCE_DIR}/${NAME_LOWERCASE}.spec" "${RPMBUILD_DIR}/SPECS"
             
             cd "${GIT_REPO_DIR}"
+            git fetch -f --tags
+            echo "Using ${COMMIT_TAG}  @ ${VERSION_WITH_SUFFIX}"
             COMMIT_SHA="$(git rev-parse ${COMMIT_TAG})"
             git checkout "${COMMIT_TAG}"
-            echo "Using ${COMMIT_TAG} / ${COMMIT_SHA} @ ${VERSION_WITH_SUFFIX}"
+            echo "Using ${COMMIT_TAG} -> ${COMMIT_SHA}"
             git archive --format=tar --prefix="${NAME}-${VERSION_WITH_SUFFIX}/" HEAD | gzip > "${RPMBUILD_DIR}/SOURCES/v${VERSION_WITH_SUFFIX}.tar.gz"
             cd -
                                        
