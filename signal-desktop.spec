@@ -39,6 +39,12 @@ cd Signal-Desktop-%{version}%{dash_version_suffix}
 # Fix segfault (without binary openssl)
 # sed -i 's|"https://github.com/scottnonnenberg-signal/node-sqlcipher.git#ed4f4d179ac010c6347b291cbd4c2ebe5c773741"|"3.2.1"|' package.json
 
+
+# use a custom fork to enable fts5 but without the above madness
+sed -i 's|"https://github.com/scottnonnenberg-signal/node-sqlcipher.git#ed4f4d179ac010c6347b291cbd4c2ebe5c773741"|"https://github.com/drahnr/node-sqlcipher.git#79674867a7ff8beac598eabdeae275290bda481c"|' package.json
+
+
+
 # Fix nodejs version
 export LOCAL_NODE_VERSION="$(node -v | cut -b 2-)"
 sed -i -- "s/    \"node\": .*/    \"node\": \"${LOCAL_NODE_VERSION}\"/g" package.json
@@ -54,16 +60,18 @@ PATH=node_modules/.bin:$PATH yarn install
 
 # patch @journeyapps/sqlcipher to nuke binaries
 # try and use a local copy of sqlcipher based on the original one
-yarn add --force @journeyapps/sqlcipher
-d=.tmp-ja-sqlc
 
-rm -rf "$d"
-mkdir "$d"
-cp -pR node_modules/@journeyapps/sqlcipher "$d"
-jq \
-	'del(.bundledDependencies)|. * {"scripts":{"install":"node-pre-gyp install --build-from-source"}}' \
-	$d/sqlcipher/package.json  >.$$ \
-    && mv .$$ $d/sqlcipher/package.json
+# yarn add --force @drahnr/sqlcipher
+# d=.tmp-ja-sqlc
+
+# rm -rf "$d"
+# mkdir "$d"
+# cp -pR node_modules/@drahnr/sqlcipher "$d"
+# jq \
+# 	'del(.bundledDependencies)|. * {"scripts":{"install":"node-pre-gyp install --build-from-source"}}' \
+# 	$d/sqlcipher/package.json  >.$$ \
+#     && mv .$$ $d/sqlcipher/package.json
+
 # purge cache just in case (we didn't change version)
 rm -rf $(yarn cache dir)/npm-@journeyapps/sqlcipher-*
 yarn add --force file://$(realpath $d/sqlcipher)
