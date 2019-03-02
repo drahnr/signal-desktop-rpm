@@ -8,7 +8,7 @@ URL:		https://github.com/signalapp/Signal-Desktop#readme
 Source0: https://github.com/signalapp/Signal-Desktop/archive/v%{version}%{dash_version_suffix}.tar.gz
 
 #ExclusiveArch:	x86_64
-BuildRequires: nodejs
+#BuildRequires: nodejs
 BuildRequires: binutils
 BuildRequires: yarn
 BuildRequires: git
@@ -36,14 +36,20 @@ tar xfz %{S:0}
 
 %build
 cd Signal-Desktop-%{version}%{dash_version_suffix}
+rm -vf yarn.lock
+
 # Fix segfault (without binary openssl)
 # sed -i 's|"https://github.com/scottnonnenberg-signal/node-sqlcipher.git#ed4f4d179ac010c6347b291cbd4c2ebe5c773741"|"3.2.1"|' package.json
 
+mkdir -p $(pwd)/.mynpm
+
+npm config set prefix $(pwd)/.mynpm 
+npm install -g node@8.12.0
+
+export PATH=$(pwd)/.mynpm/bin/:$PATH
 
 # use a custom fork to enable fts5 but without the above madness
-sed -i 's|"https://github.com/scottnonnenberg-signal/node-sqlcipher.git#ed4f4d179ac010c6347b291cbd4c2ebe5c773741"|"https://github.com/drahnr/node-sqlcipher.git#79674867a7ff8beac598eabdeae275290bda481c"|' package.json
-
-
+sed -i 's|"https://github.com/scottnonnenberg-signal/node-sqlcipher.git#36149a4b03ccf11ec18b9205e1bfd9056015cf07"|"https://github.com/drahnr/node-sqlcipher.git#79674867a7ff8beac598eabdeae275290bda481c"|' package.json
 
 # Fix nodejs version
 export LOCAL_NODE_VERSION="$(node -v | cut -b 2-)"
@@ -74,7 +80,7 @@ PATH=node_modules/.bin:$PATH yarn install
 
 # purge cache just in case (we didn't change version)
 rm -rf $(yarn cache dir)/npm-@journeyapps/sqlcipher-*
-yarn add --force file://$(realpath $d/sqlcipher)
+yarn add --force "https://github.com/drahnr/node-sqlcipher.git#79674867a7ff8beac598eabdeae275290bda481c"
 
 # overwrite some silly timestamp
 # TODO shell math is not nice
