@@ -14,17 +14,19 @@ BuildRequires: yarn
 BuildRequires: git
 BuildRequires: python2
 BuildRequires: gcc, gcc-c++
-BuildRequires: node-gyp, npm
+BuildRequires: npm
 BuildRequires: desktop-file-utils
 BuildRequires: make
-BuildRequires: compat-openssl10-devel
+BuildRequires: binutils, git, python2, gcc, gcc-c++, openssl-devel, jq
+BuildRequires: nodejs >= 8.12.0
+BuildRequires: ca-certificates
 # date
 BuildRequires: coreutils
 BuildRequires: bc
 
 #Depends: gconf2, gconf-service, libnotify4, libappindicator1, libxtst6, libnss3, libasound2, libxss1
 Requires: GConf2, libnotify, libappindicator, libXtst, nss
-Requires: compat-openssl10
+Requires: openssl
 
 %description
 Private messaging from your desktop
@@ -38,18 +40,17 @@ tar xfz %{S:0}
 cd Signal-Desktop-%{version}%{dash_version_suffix}
 rm -vf yarn.lock
 
-# Fix segfault (without binary openssl)
-# sed -i 's|"https://github.com/scottnonnenberg-signal/node-sqlcipher.git#ed4f4d179ac010c6347b291cbd4c2ebe5c773741"|"3.2.1"|' package.json
 
 mkdir -p $(pwd)/.mynpm
 
 npm config set prefix $(pwd)/.mynpm 
-npm install -g node@8.12.0
+npm install -g node@10.15.3
+npm install -g node-gyp
 
 export PATH=$(pwd)/.mynpm/bin/:$PATH
 
 # use a custom fork to enable fts5 but without the above madness
-sed -i 's|"https://github.com/scottnonnenberg-signal/node-sqlcipher.git#36149a4b03ccf11ec18b9205e1bfd9056015cf07"|"https://github.com/drahnr/node-sqlcipher.git#79674867a7ff8beac598eabdeae275290bda481c"|' package.json
+# sed -i 's|"https://github.com/scottnonnenberg-signal/node-sqlcipher.git#36149a4b03ccf11ec18b9205e1bfd9056015cf07"|"https://github.com/drahnr/node-sqlcipher.git#79674867a7ff8beac598eabdeae275290bda481c"|' package.json
 
 # Fix nodejs version
 export LOCAL_NODE_VERSION="$(node -v | cut -b 2-)"
@@ -57,33 +58,56 @@ sed -i -- "s/    \"node\": .*/    \"node\": \"${LOCAL_NODE_VERSION}\"/g" package
 unset LOCAL_NODE_VERSION
 PATH=node_modules/.bin:$PATH yarn install
 
-#yarn install --frozen-lockfile
-#yarn generate --force
-#yarn prepare-beta-build
-#yarn build-release --linux dir
 
-#yarn add --dev electron@~2.0.3  # electron-rebuild
+node --version
 
-# patch @journeyapps/sqlcipher to nuke binaries
-# try and use a local copy of sqlcipher based on the original one
+# avoid using fedora's node-gyp
+npm install node-gyp
 
-# yarn add --force @drahnr/sqlcipher
-# d=.tmp-ja-sqlc
+# Upgrade electron
+sed -i 's/"electron": "3.0.14"/"electron": "3.1.1"/' package.json
 
-# rm -rf "$d"
-# mkdir "$d"
-# cp -pR node_modules/@drahnr/sqlcipher "$d"
-# jq \
-# 	'del(.bundledDependencies)|. * {"scripts":{"install":"node-pre-gyp install --build-from-source"}}' \
-# 	$d/sqlcipher/package.json  >.$$ \
-#     && mv .$$ $d/sqlcipher/package.json
+# Allow higher node minor versions
+sed -i 's/"node": "/&^/' package.json
 
-# purge cache just in case (we didn't change version)
-rm -rf $(yarn cache dir)/npm-@journeyapps/sqlcipher-*
-yarn add --force "https://github.com/drahnr/node-sqlcipher.git#79674867a7ff8beac598eabdeae275290bda481c"
 
-# overwrite some silly timestamp
-# TODO shell math is not nice
+yarn install
+
+# use dynamic linking
+patch -Np1 << 'EOF'
+--- a/node_modules/@journeyapps/sqlcipher/deps/sqlite3.gyp	2019-01-22 21:59:46.974203280 +0100
++++ b/node_modules/@journeyapps/sqlcipher/deps/sqlite3.gyp	2019-01-22 23:05:52.257819994 +0100
+@@ -64,16 +64,14 @@
+         },
+         'link_settings': {
+           'libraries': [
+-            # This statically links libcrypto, whereas -lcrypto would dynamically link it
+-            '<(SHARED_INTERMEDIATE_DIR)/sqlcipher-amalgamation-<@(sqlite_version)/OpenSSL-macOS/libcrypto.a'
++            '-lcrypto'
+           ]
+         }
+       },
+       { # Linux
+         'link_settings': {
+           'libraries': [
+-            # This statically links libcrypto, whereas -lcrypto would dynamically link it
+-            '<(SHARED_INTERMEDIATE_DIR)/sqlcipher-amalgamation-<@(sqlite_version)/OpenSSL-Linux/libcrypto.a'
++            '-lcrypto'
+           ]
+         }
+       }]
+@@ -140,8 +138,7 @@
+         { # linux
+           'include_dirs': [
+             '<(SHARED_INTERMEDIATE_DIR)/sqlcipher-amalgamation-<@(sqlite_version)/',
+-            '<(SHARED_INTERMEDIATE_DIR)/sqlcipher-amalgamation-<@(sqlite_version)/openssl-include/'
+-          ]
++            ]
+         }]
+       ],
+EOF
+
+# overwrite some silly timestamp using shell math (ugh)
 echo \{time: $(echo "$(date '+%s') + 90 * 24 * 60 * 60" | bc)000\}  > ./config/local-development.json
 
 # ... and make sure the timestamp task is not run by grunt, so we have to specify all the grund tasks manually
@@ -161,6 +185,9 @@ fi
 %{_libdir}/%{name}/*
 
 %changelog
+* Fri Jan 25 2019 Bernhard Schuster <bernhard@ahoi.io> 1.22.0-1
+  - bump to upstream version 1.22.0
+
 * Fri Jan 25 2019 Bernhard Schuster <bernhard@ahoi.io> 1.20.0-1
   - bump to upstream version 1.20.0-rc3
 
