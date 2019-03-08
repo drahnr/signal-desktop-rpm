@@ -44,7 +44,7 @@ rm -vf yarn.lock
 mkdir -p $(pwd)/.mynpm
 
 npm config set prefix $(pwd)/.mynpm 
-npm install -g node@10.15.3
+npm install -g node@8.12.0
 npm install -g node-gyp
 
 export PATH=$(pwd)/.mynpm/bin/:$PATH
