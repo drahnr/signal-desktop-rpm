@@ -155,7 +155,6 @@ jobs:
 
             # explicitly install modules first, so far there is no
             # way to combined this with builddep/spectool
-            dnf module install -y nodejs:8
             dnf install -y 'dnf-command(builddep)'
             dnf builddep -y "SPECS/${NAME_LOWERCASE}.spec"
 

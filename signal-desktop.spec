@@ -7,8 +7,7 @@ URL:		https://github.com/signalapp/Signal-Desktop#readme
 
 Source0: https://github.com/signalapp/Signal-Desktop/archive/v%{version}%{dash_version_suffix}.tar.gz
 
-#ExclusiveArch:	x86_64
-#BuildRequires: nodejs
+ExclusiveArch:	x86_64
 BuildRequires: binutils
 BuildRequires: yarn
 BuildRequires: git
@@ -18,8 +17,11 @@ BuildRequires: npm
 BuildRequires: desktop-file-utils
 BuildRequires: make
 BuildRequires: binutils, git, python2, gcc, gcc-c++, openssl-devel, jq
-BuildRequires: nodejs >= 8.12.0
+BuildRequires: nodejs >= 10.13.0
 BuildRequires: ca-certificates
+
+Requires:   GConf2, libnotify, libappindicator, libXtst, nss
+
 # date
 BuildRequires: coreutils
 BuildRequires: bc
@@ -41,28 +43,11 @@ cd Signal-Desktop-%{version}%{dash_version_suffix}
 rm -vf yarn.lock
 
 
-mkdir -p $(pwd)/.mynpm
-
-npm config set prefix $(pwd)/.mynpm 
-npm install -g node@8.12.0
-npm install -g node-gyp
-
-export PATH=$(pwd)/.mynpm/bin/:$PATH
-
-# use a custom fork to enable fts5 but without the above madness
-# sed -i 's|"https://github.com/scottnonnenberg-signal/node-sqlcipher.git#36149a4b03ccf11ec18b9205e1bfd9056015cf07"|"https://github.com/drahnr/node-sqlcipher.git#79674867a7ff8beac598eabdeae275290bda481c"|' package.json
-
-# Fix nodejs version
-export LOCAL_NODE_VERSION="$(node -v | cut -b 2-)"
-sed -i -- "s/    \"node\": .*/    \"node\": \"${LOCAL_NODE_VERSION}\"/g" package.json
-unset LOCAL_NODE_VERSION
-PATH=node_modules/.bin:$PATH yarn install
-
 
 node --version
 
 # avoid using fedora's node-gyp
-npm install node-gyp
+# npm install node-gyp
 
 # Upgrade electron
 sed -i 's/"electron": "3.0.14"/"electron": "3.1.1"/' package.json
@@ -107,15 +92,23 @@ patch -Np1 << 'EOF'
        ],
 EOF
 
+# build assets (icons), then RPM - building a plain directory loses the later install paths
+# yarn --no-default-rc generate --force --ignore-engines
+
+
 # overwrite some silly timestamp using shell math (ugh)
-echo \{time: $(echo "$(date '+%s') + 90 * 24 * 60 * 60" | bc)000\}  > ./config/local-development.json
+# echo \{time: $(echo "$(date '+%s') + 90 * 24 * 60 * 60" | bc)000\}  > ./config/local-development.json
 
 # ... and make sure the timestamp task is not run by grunt, so we have to specify all the grund tasks manually
 # since default would trigger the timestamp from commit creation again
 # build
-yarn generate exec:build-protobuf exec:transpile concat copy:deps sass
+# yarn generate exec:build-protobuf exec:transpile concat copy:deps sass
 
-yarn --verbose build-release --linux dir
+# yarn --verbose build-release --linux dir
+
+yarn --no-default-rc generate --force --ignore-engines
+
+env SIGNAL_ENV=production yarn --no-default-rc --verbose build-release --linux dir
 
 %install
 
@@ -136,8 +129,7 @@ for i in 16 24 32 48 64 128 256 512; do
 done
 
 # right permissions for shared objects
-install -m 755 %{_builddir}/Signal-Desktop-%{version}%{dash_version_suffix}/release/%{PACKDIR}/libffmpeg.so %{buildroot}%{_libdir}/%{name}
-install -m 755 %{_builddir}/Signal-Desktop-%{version}%{dash_version_suffix}/release/%{PACKDIR}/libnode.so %{buildroot}%{_libdir}/%{name}
+# install -m 755 %{_builddir}/Signal-Desktop-%{version}%{dash_version_suffix}/release/%{PACKDIR}/*.so %{buildroot}%{_libdir}/%{name}
 
 # create symlink
 install -dm755 %{buildroot}%{_bindir}
