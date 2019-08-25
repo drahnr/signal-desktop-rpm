@@ -17,7 +17,7 @@ BuildRequires: npm
 BuildRequires: desktop-file-utils
 BuildRequires: make
 BuildRequires: binutils, git, python2, gcc, gcc-c++, openssl-devel, jq
-BuildRequires: nodejs >= 10.13.0
+BuildRequires: nodejs >= 12.14.0
 BuildRequires: ca-certificates
 
 Requires:   GConf2, libnotify, libappindicator, libXtst, nss

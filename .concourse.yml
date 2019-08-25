@@ -8,9 +8,8 @@ resources:
 - name: container-fedora
   type: docker-image
   source:
-    repository: quay.io/drahnr/fedora
-    username: ((quay-ratpoison-username))
-    password: ((quay-ratpoison-password))
+    repository: fedora
+    tag: latest
     max_concurrent_downloads: 2
     max_concurrent_uploads: 2
 
@@ -100,7 +99,8 @@ jobs:
           - -exc
           - |
             cat /etc/os-release
-            dnf install -y git make gcc clang cmake rpmdevtools rpmspectool gnupg
+            dnf module install -y nodejs:12
+            dnf install -y git make gcc gcc-c++ clang cmake rpmdevtools rpmspectool gnupg
             REFERENCE_DIR="$(pwd)"
 
             VERSION_WITH_SUFFIX=$(cat release/version)
@@ -151,6 +151,7 @@ jobs:
             cd "${RPMBUILD_DIR}"
             ls -al SOURCES
 
+            curl --slient --location https://rpm.nodesource.com/setup_12.x | sudo -E bash -
             curl --silent --location https://dl.yarnpkg.com/rpm/yarn.repo | tee /etc/yum.repos.d/yarn.repo
 
             # explicitly install modules first, so far there is no
