@@ -13,7 +13,6 @@ BuildRequires: yarn
 BuildRequires: git
 BuildRequires: python2
 BuildRequires: gcc, gcc-c++
-BuildRequires: npm
 BuildRequires: desktop-file-utils
 BuildRequires: make
 BuildRequires: binutils, git, python2, gcc, gcc-c++, openssl-devel, jq
