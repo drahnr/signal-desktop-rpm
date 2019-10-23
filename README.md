@@ -8,7 +8,7 @@ With the recent issues building, this requires the following packages and module
 
 ```
 yarn
-nodejs:8
+nodejs:12
 node-gyp
 ```
 
