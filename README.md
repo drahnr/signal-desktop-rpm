@@ -1,4 +1,19 @@
-# CI pipeline for Signal-Desktop fedora rpm
+# DEPRECATED
+
+Negativo has signal-desktop shipping with his multimedia repos.
+
+
+https://negativo17.org/
+
+the signal-desktop sources used there can be found at
+
+https://github.com/negativo17/Signal-Desktop
+
+.
+
+Since the spec file has various issues, and the one linked above is shorter and more readable.
+
+## CI pipeline for Signal-Desktop fedora rpm
 
 See [ci.spearow.io](https://ci.spearow.io/teams/main/pipelines/signal-desktop) for the current status or a build history.
 
