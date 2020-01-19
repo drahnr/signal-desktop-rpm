@@ -3,7 +3,7 @@
 Negativo has signal-desktop shipping with his multimedia repos.
 
 
-https://negativo17.org/
+https://negativo17.org/multimedia
 
 the signal-desktop sources used there can be found at
 
